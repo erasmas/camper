@@ -47,12 +47,16 @@
                      (str/replace "by " ""))
           url (e/get-element-attr driver download-query "href")
           download-dir (format "%s/%s" download-dir artist)
-          download-path (format "%s/%s.zip" download-dir title)]
-      (log/infof "Downloading '%s' by '%s'\n" title artist)
-      (ensure-download-dir-created download-dir)
-      (download-url-to-file url download-path)))
-  (catch Exception _
-    (log/errorf "Failed to download %s" url))))
+          download-path (format "%s/%s.zip" download-dir title)
+          f (io/file download-path)]
+      (if (.exists f)
+        (log/infof "Skipping downloaded album at %s" download-path)
+        (do
+          (log/infof "Downloading '%s' by '%s'\n" title artist)
+          (ensure-download-dir-created download-dir)
+          (download-url-to-file url download-path)))))
+    (catch Exception _
+      (log/errorf "Failed to download %s" url))))
 
 (defn get-album-urls
   [driver]
@@ -73,9 +77,8 @@
 
 (def cli-options
   [["-u" "--user USER" "Username"]
-   ["-p" "--password PASSWORD" "Password"
-    "-d" "--download-dir PATH" "Download directory"
-    :default "~/Downloads/Bandcamp"]])
+   ["-p" "--password PASSWORD" "Password"]
+   ["-d" "--download-dir DOWNLOAD_DIR" "Download directory"]])
 
 (defn -main
   [& args]
@@ -91,5 +94,5 @@
       (finally
         (e/quit driver)))))
 
-;; TODO Skip existing downloads
+;; TODO Check downloaded archives for errors
 ;; TODO Select download format
